@@ -1,0 +1,11 @@
+{
+  "name": "sorting",
+  "version": "1.0.0",
+  "description": "Nessus Backend Software Engineer test 3 sorting",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "James Archuleta <james.archuleta@gmail.com>",
+  "license": "ISC"
+}

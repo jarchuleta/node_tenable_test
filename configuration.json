@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "name": "host1",
+            "hostname": "nessus-ntp.lab.com",
+            "port": "1241",
+            "username": "toto1"
+        },
+        {
+            "name": "host2",
+            "hostname": "nessus-xml.lab.com",
+            "port": "3384",
+            "username": "admin"
+        },
+        {
+            "name": "host3",
+            "hostname": "nessus-xml.lab.com",
+            "port": "3384",
+            "username": "admin1"
+        },
+        {
+            "name": "host5",
+            "hostname": "google.com",
+            "port": "80",
+            "username": "james"
+        }
+    ]
+}
