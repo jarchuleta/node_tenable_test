@@ -137,7 +137,7 @@ module.exports.retrieve =  function (request, response){
 
 
   response.writeHead(200, {'Content-Type': 'application/json'});
-  response.write(JSON.stringify(config.data, 'james', 4));
+  response.write(JSON.stringify(config.data, null, 4));
   response.end();
 
 }
@@ -296,7 +296,19 @@ module.exports.list =  function (request, response){
     return;
   }
 
+  // check query params
+  var asc = false;
+  if (request.query.start != undefined && request.query.asc == 'true'){
+    asc = true;
+  }
 
+  var field = config.fields[0];
+  if (request.query.field != undefined && config.fields.indexOf(request.query.field) != -1 ){
+    field = config.fields[config.fields.indexOf(request.query.field)];
+  }
+
+  // do the sort
+  config.Sort(field, asc);
   var currentConfig = config.data.configurations;
   var start = 0;
   var page_size = 10;
@@ -324,42 +336,45 @@ module.exports.list =  function (request, response){
 
   if (request.query.page_size != undefined && typeof request.query.page_size != "number"){
     page_size = parseInt(request.query.page_size);
-
-
   }
 
   if (redirect) {
-    response.writeHead(302, {'location': '/list?start='+start+'&page_size='+page_size});
+    response.writeHead(302, {'location': '/list?start='+start+'&page_size='+page_size + '&field='+field+'&asc='+asc });
     response.end();
     return;
   };
 
 
-  var table = BuildTable(currentConfig, start, page_size);
-
-
-  // render the list
-  readFileCallback('html/list.html', response, function (data){
-    var body = util.format(data.toString(), table);
-    response.write(body);
+  if (request.query.format != undefined && request.query.format == 'json'){
+    response.writeHead(200, {'Content-Type': 'application/json'});
+    response.write(JSON.stringify(BuildJson(currentConfig, start, page_size, field, asc), null, 4));
     response.end();
-  });
+
+
+  }else {
+    var table = BuildPagingTable(currentConfig, start, page_size, field, asc);
+    // render the list
+    readFileCallback('html/list.html', response, function (data){
+      var body = util.format(data.toString(), table);
+      response.write(body);
+      response.end();
+    });
+  }
 
 }
 
-function BuildTable(currentConfig, start, page_size){
+function BuildPagingTable(currentConfig, start, page_size, field, asc){
   // build the table header
  var table = '<table>';
  table += '<tr>';
- table += '<th></th>';
- table += '<th>Name</th>';
- table += '<th>Hostname</th>';
- table += '<th>Port</th>';
- table += '<th>Username</th>';
+ table += '<th><a href="/list?start='+start+'&page_size='+page_size + '&field=name&asc='+!asc+'">Name</a></th>';
+ table += '<th><a href="/list?start='+start+'&page_size='+page_size + '&field=hostname&asc='+!asc+'">Hostname</a></th>';
+ table += '<th><a href="/list?start='+start+'&page_size='+page_size + '&field=port&asc='+!asc+'">Port</a></th>';
+ table += '<th><a href="/list?start='+start+'&page_size='+page_size + '&field=username&asc='+!asc+'">Username</a></th>';
  table += '</tr>';
 
   //loop to build table
-  var i
+  var i;
   for (i = start; i < (start + page_size); i++) {
     // prevent from overrunning the config
     if ( i >= currentConfig.length){
@@ -368,7 +383,6 @@ function BuildTable(currentConfig, start, page_size){
 
       var item = currentConfig[i];
       table += '<tr>';
-      table += '<td>'+i+'</td>';
       table += '<td>'+item.name+'</td>';
       table += '<td>'+item.hostname+'</td>';
       table += '<td>'+item.port+'</td>';
@@ -380,7 +394,7 @@ function BuildTable(currentConfig, start, page_size){
   var pager = '';
   // prev page 1 of 10 next
   if (start > 0){
-    pager += '<a href="/list?start='+ (start-page_size) +'&page_size='+page_size+'">prev</a> ' ;
+    pager += '<a href="/list?start='+ (start-page_size) +'&page_size='+page_size+'&field='+field+'&asc='+ asc +'">prev</a> ' ;
   }else {
     pager += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
   }
@@ -391,7 +405,7 @@ function BuildTable(currentConfig, start, page_size){
   pager += Math.ceil (currentConfig.length / page_size );
 
   if (i < currentConfig.length){
-    pager += '<a href="/list?start='+ (i) +'&page_size='+page_size+'"> next</a>';
+    pager += '<a href="/list?start='+ (i) +'&page_size='+page_size+ '&field='+field+'&asc='+ asc +'"> next</a>';
   }
 
   table += '<tr><td>Total:'+currentConfig.length+'</td><td></td><td>'+pager+'</td><tr>';
@@ -399,4 +413,24 @@ function BuildTable(currentConfig, start, page_size){
 
 
   return table;
+}
+
+
+//build a json filte
+function BuildJson(currentConfig, start, page_size, field, asc){
+
+  var json = {
+    "configurations" :[]
+  };
+
+  for (i = start; i < (start + page_size); i++) {
+    // prevent from overrunning the config
+    if ( i >= currentConfig.length){
+      break;
+    }
+    var item = currentConfig[i];
+    json.configurations.push(item);
+  }
+
+  return json;
 }

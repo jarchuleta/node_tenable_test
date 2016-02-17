@@ -1,7 +1,7 @@
 var fs = require('fs');
+var util = require('util');
 
-
-
+// sample data
 module.exports.data = {
   "configurations" :[
     {
@@ -18,6 +18,10 @@ module.exports.data = {
     }
   ]
 };
+
+
+module.exports.fields = [ "name","hostname","port","username" ];
+
 
 
 /*
@@ -44,8 +48,6 @@ module.exports.Open = function(inputFilename){
 * Saves current data set to a json file
 */
 module.exports.Save = function(outputFilename){
-
-
 
   var temp = {
     "configurations" : []
@@ -147,4 +149,32 @@ module.exports.Modify = function (name, hostname, port, user){
 
 
     //return true;
+}
+
+
+//------------------------------------------------------------------------------
+
+// sort function
+module.exports.Sort = function (field, asc){
+
+  module.exports.data.configurations.sort(sort_by(field,asc));
+}
+
+// sort by function to sort
+var sort_by = function(field, asc ){
+
+   var asc = asc ? 1 : -1;
+   var key = function(x) {
+     if (util.isString(x[field]) ){
+       return x[field].toUpperCase();
+     }else{
+       return x[field];
+    }
+
+   };
+
+   return function (first, second) {
+     //console.log('f: ' + first + ' sec:' + second);
+       return first = key(first), second = key(second), asc * ((first > second) - (second > first));
+     }
 }
