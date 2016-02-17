@@ -77,6 +77,11 @@ function handleRequests(request, response){
         }
         break;
 
+        //------------------------------------------------------------------------
+        case '/list':
+        routes.list(request, response);
+          break;
+
 
         //------------------------------------------------------------------------
 

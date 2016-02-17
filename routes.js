@@ -285,3 +285,118 @@ module.exports.post_delete =  function (request, response){
   response.end();
 
 }
+
+//------------------------------------------------------------------------
+
+module.exports.list =  function (request, response){
+  // redirect if not logged in
+  if (isLoggedIn(request) == false){
+    response.writeHead(302, {'location': '/login'});
+    response.end();
+    return;
+  }
+
+
+  var currentConfig = config.data.configurations;
+  var start = 0;
+  var page_size = 10;
+
+  var redirect = false;
+  // add query params if they are Missing
+  if (request.query.start == undefined || request.query.page_size == undefined ||
+    isNaN(request.query.start)  || isNaN(request.query.page_size)
+  ){
+    redirect = true;
+  }
+
+  // make sure it's set and number
+  if (request.query.start != undefined && typeof request.query.start != "number"){
+    start = parseInt(request.query.start);
+    if (start < 0){
+      start = 0;
+      redirect = true;
+    }
+    if (start >= currentConfig.length){
+      start = 0;
+      redirect = true;
+    }
+  }
+
+  if (request.query.page_size != undefined && typeof request.query.page_size != "number"){
+    page_size = parseInt(request.query.page_size);
+
+
+  }
+
+  if (redirect) {
+    response.writeHead(302, {'location': '/list?start='+start+'&page_size='+page_size});
+    response.end();
+    return;
+  };
+
+
+  var table = BuildTable(currentConfig, start, page_size);
+
+
+  // render the list
+  readFileCallback('html/list.html', response, function (data){
+    var body = util.format(data.toString(), table);
+    response.write(body);
+    response.end();
+  });
+
+}
+
+function BuildTable(currentConfig, start, page_size){
+  // build the table header
+ var table = '<table>';
+ table += '<tr>';
+ table += '<th></th>';
+ table += '<th>Name</th>';
+ table += '<th>Hostname</th>';
+ table += '<th>Port</th>';
+ table += '<th>Username</th>';
+ table += '</tr>';
+
+  //loop to build table
+  var i
+  for (i = start; i < (start + page_size); i++) {
+    // prevent from overrunning the config
+    if ( i >= currentConfig.length){
+      break;
+    }
+
+      var item = currentConfig[i];
+      table += '<tr>';
+      table += '<td>'+i+'</td>';
+      table += '<td>'+item.name+'</td>';
+      table += '<td>'+item.hostname+'</td>';
+      table += '<td>'+item.port+'</td>';
+      table += '<td>'+item.username+'</td>';
+      table += '</tr>';
+  }
+
+
+  var pager = '';
+  // prev page 1 of 10 next
+  if (start > 0){
+    pager += '<a href="/list?start='+ (start-page_size) +'&page_size='+page_size+'">prev</a> ' ;
+  }else {
+    pager += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+  }
+
+  pager += 'page ';
+  pager += Math.floor (start / page_size) + 1 ;
+  pager += ' of ' ;
+  pager += Math.ceil (currentConfig.length / page_size );
+
+  if (i < currentConfig.length){
+    pager += '<a href="/list?start='+ (i) +'&page_size='+page_size+'"> next</a>';
+  }
+
+  table += '<tr><td>Total:'+currentConfig.length+'</td><td></td><td>'+pager+'</td><tr>';
+  table += '</table>';
+
+
+  return table;
+}
